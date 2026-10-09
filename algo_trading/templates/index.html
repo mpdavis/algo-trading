@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="refresh" content="60">
+<title>Algo Trading</title>
+<style>
+  :root {
+    --bg: #f6f7f5; --surface: #ffffff; --fg: #15171a; --fg-2: #5a5f66; --muted: #8b9097;
+    --line: #e3e5e1; --accent: #2a6fdb; --up: #13824b; --down: #c8382f; --warn: #a86a00;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #101214; --surface: #181b1e; --fg: #eef0f2; --fg-2: #a9afb6; --muted: #7d838a;
+      --line: #2a2e33; --accent: #6aa1ff; --up: #3fbf7f; --down: #f0706a; --warn: #e3a63a;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 var(--sans); }
+  main { max-width: 1120px; margin: 0 auto; padding: 24px 16px 48px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; }
+  h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
+  h2 { font-size: 15px; margin: 0 0 10px; }
+  .meta { color: var(--muted); font-size: 12px; }
+  .chip { font: 600 11px var(--sans); letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px;
+          border-radius: 999px; border: 1px solid currentColor; }
+  .chip.paper { color: var(--accent); }
+  .chip.live { color: var(--down); }
+  .chip.ok { color: var(--up); }
+  .chip.stale { color: var(--warn); }
+  .chip.off { color: var(--muted); }
+  .errors { border: 1px solid var(--down); color: var(--down); border-radius: 8px; padding: 10px 14px; }
+  .errors p { margin: 0; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+  .stat, .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+  .stat { padding: 12px 14px; display: grid; gap: 2px; }
+  .stat .label { color: var(--fg-2); font-size: 12px; }
+  .stat .value { font: 600 20px var(--mono); font-variant-numeric: tabular-nums; }
+  .stat .sub { font: 12px var(--mono); }
+  .panel { padding: 14px; min-width: 0; }
+  .up { color: var(--up); } .down { color: var(--down); }
+  .chart svg { width: 100%; height: 120px; display: block; }
+  .chart polyline { fill: none; stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
+  .chart .axis { display: flex; justify-content: space-between; color: var(--muted); font: 11px var(--mono); }
+  .scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 7px 10px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+  th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+  tr:last-child td { border-bottom: 0; }
+  td.num, th.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .empty { color: var(--muted); padding: 8px 0; margin: 0; }
+  .strategies { display: grid; gap: 12px; }
+  .strategy-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; margin-bottom: 4px; }
+  .strategy-head h3 { margin: 0; font-size: 15px; }
+  .summary { color: var(--fg-2); margin: 0 0 10px; max-width: 75ch; }
+  .facts { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 0 0 10px; font-size: 13px; }
+  .facts dt { color: var(--muted); display: inline; } .facts dd { display: inline; margin: 0 0 0 6px; font-family: var(--mono); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Algo Trading</h1>
+    <span class="chip {{ 'paper' if paper else 'live' }}">{{ 'Paper' if paper else 'Live money' }}</span>
+    <span class="meta">Updated {{ now.strftime('%Y-%m-%d %H:%M UTC') }} · refreshes every minute</span>
+  </header>
+
+  {% if snap.errors %}
+  <div class="errors" role="alert">
+    {% for e in snap.errors %}<p>{{ e }}</p>{% endfor %}
+  </div>
+  {% endif %}
+
+  {% set a = snap.account %}
+  {% if a %}
+  {% set day = a.equity - a.last_equity %}
+  <section class="stats" aria-label="Account">
+    <div class="stat">
+      <span class="label">Equity</span>
+      <span class="value">{{ a.equity | money }}</span>
+      <span class="sub {{ 'up' if day > 0 else 'down' if day < 0 else '' }}">{{ day | signed_money }} today{% if a.last_equity %} ({{ '%+.2f' | format(day / a.last_equity * 100) }}%){% endif %}</span>
+    </div>
+    <div class="stat"><span class="label">Cash</span><span class="value">{{ a.cash | money }}</span></div>
+    <div class="stat"><span class="label">Buying power</span><span class="value">{{ a.buying_power | money }}</span></div>
+    <div class="stat"><span class="label">Long exposure</span><span class="value">{{ a.long_value | money }}</span></div>
+    <div class="stat"><span class="label">Short exposure</span><span class="value">{{ a.short_value | money }}</span></div>
+  </section>
+  {% endif %}
+
+  {% if spark %}
+  {% set first = snap.equity_curve[0] %}{% set last = snap.equity_curve[-1] %}
+  <section class="panel chart" aria-label="Equity, last 3 months">
+    <h2>Equity, last 3 months</h2>
+    <svg viewBox="0 0 640 120" preserveAspectRatio="none" role="img"
+         aria-label="Equity from {{ first[1] | money }} to {{ last[1] | money }}">
+      <polyline points="{{ spark }}"/>
+    </svg>
+    <div class="axis"><span>{{ first[0].strftime('%b %-d') }} · {{ first[1] | money }}</span><span>{{ last[0].strftime('%b %-d') }} · {{ last[1] | money }}</span></div>
+  </section>
+  {% endif %}
+
+  <section aria-label="Strategies">
+    <h2>Strategies</h2>
+    <div class="strategies">
+    {% for s in snap.strategies %}
+      <article class="panel">
+        <div class="strategy-head">
+          <h3>{{ s.name }}</h3>
+          {% if s.last_iteration is none %}
+            <span class="chip off">Not running</span>
+          {% elif (now - s.last_iteration).total_seconds() > 4 * 86400 %}
+            <span class="chip stale">Stale</span>
+          {% else %}
+            <span class="chip ok">Running</span>
+          {% endif %}
+          <span class="meta">Last iteration {{ s.last_iteration | ago }}</span>
+        </div>
+        {% if s.summary %}<p class="summary">{{ s.summary }}</p>{% endif %}
+        {% if s.error %}<p class="down">Status unavailable: {{ s.error }}</p>{% endif %}
+        {% if s.status %}
+          {% if s.status.facts %}
+          <dl class="facts">{% for label, value in s.status.facts %}<div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>{% endfor %}</dl>
+          {% endif %}
+          {% if s.status.rows %}
+          <div class="scroll"><table>
+            <thead><tr>{% for c in s.status.columns %}<th>{{ c }}</th>{% endfor %}</tr></thead>
+            <tbody>{% for row in s.status.rows %}<tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+          </table></div>
+          {% endif %}
+        {% endif %}
+      </article>
+    {% else %}
+      <p class="empty">No strategies found.</p>
+    {% endfor %}
+    </div>
+  </section>
+
+  <section class="panel" aria-label="Holdings">
+    <h2>Holdings</h2>
+    {% if snap.positions %}
+    <div class="scroll"><table>
+      <thead><tr><th>Symbol</th><th class="num">Qty</th><th class="num">Avg cost</th><th class="num">Price</th><th class="num">Market value</th><th class="num">Unrealized P&amp;L</th></tr></thead>
+      <tbody>
+      {% for p in snap.positions %}
+        <tr>
+          <td>{{ p.symbol }}{% if p.qty < 0 %} <span class="meta">short</span>{% endif %}</td>
+          <td class="num">{{ '%g' | format(p.qty) }}</td>
+          <td class="num">{{ p.avg_entry | money }}</td>
+          <td class="num">{{ p.price | money }}</td>
+          <td class="num">{{ p.value | money }}</td>
+          <td class="num {{ 'up' if p.pl > 0 else 'down' if p.pl < 0 else '' }}">{{ p.pl | signed_money }} ({{ '%+.2f' | format(p.pl_pct) }}%)</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    {% else %}
+    <p class="empty">No open positions.</p>
+    {% endif %}
+  </section>
+
+  <section class="panel" aria-label="Recent orders">
+    <h2>Recent orders</h2>
+    {% if snap.orders %}
+    <div class="scroll"><table>
+      <thead><tr><th>Time</th><th>Symbol</th><th>Side</th><th class="num">Qty</th><th class="num">Fill price</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for o in snap.orders %}
+        <tr>
+          <td>{{ o.time.strftime('%Y-%m-%d %H:%M') if o.time else '—' }}</td>
+          <td>{{ o.symbol }}</td>
+          <td>{{ o.side }}</td>
+          <td class="num">{{ '%g' | format(o.filled_qty) }}{% if o.filled_qty != o.qty %} / {{ '%g' | format(o.qty) }}{% endif %}</td>
+          <td class="num">{{ o.price | money }}</td>
+          <td>{{ o.status.replace('_', ' ') }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    {% else %}
+    <p class="empty">No orders yet.</p>
+    {% endif %}
+  </section>
+</main>
+</body>
+</html>

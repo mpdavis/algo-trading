@@ -3,8 +3,8 @@ from datetime import date, timedelta
 
 import pytest
 
-from pairs_trader.session import StateFile, Stored, held_side, run_session
-from pairs_trader.strategy import Pair, Params, Side, parse_pairs
+from strategies.pairs.rules import Pair, Params, Side, parse_pairs
+from strategies.pairs.session import StateFile, Stored, held_side, run_session
 
 PAIR = Pair("AAA", "BBB")
 PARAMS = Params(lookback=30)

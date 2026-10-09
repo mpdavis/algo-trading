@@ -10,10 +10,12 @@ WORKDIR /app
 # Dependencies resolve from pyproject alone, so this layer survives edits to
 # the package source.
 COPY pyproject.toml README.md ./
-COPY pairs_trader/__init__.py ./pairs_trader/
+COPY algo_trading/__init__.py ./algo_trading/
+COPY strategies/__init__.py ./strategies/
 RUN pip install --no-cache-dir .
 
-COPY pairs_trader/ ./pairs_trader/
+COPY algo_trading/ ./algo_trading/
+COPY strategies/ ./strategies/
 RUN pip install --no-cache-dir --no-deps .
 
 RUN useradd --uid 1000 --create-home --shell /usr/sbin/nologin trader \
@@ -29,5 +31,7 @@ WORKDIR /tmp
 
 VOLUME ["/data"]
 
-ENTRYPOINT ["pairs-trader"]
+# `live` runs every strategy in strategies/ unless STRATEGIES or arguments
+# name some; `dashboard` serves the UI on 8080.
+ENTRYPOINT ["algo-trading"]
 CMD ["live"]
