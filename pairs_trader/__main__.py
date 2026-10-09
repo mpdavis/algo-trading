@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 import sys
 from datetime import datetime
@@ -36,6 +37,14 @@ def cmd_live() -> None:
     params["heartbeat_file"] = os.environ.get("HEARTBEAT_FILE", "/tmp/heartbeat")
     trader = Trader()
     trader.add_strategy(PairsStrategy(broker=broker, parameters=params))
+    # LumiBot configures only its own loggers, so without a handler here the
+    # session's z-scores, decisions and orders never reach the container log.
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(asctime)s | %(levelname)s | %(name)s: %(message)s"))
+    ours = logging.getLogger("pairs_trader")
+    ours.addHandler(handler)
+    ours.setLevel(logging.INFO)
+    ours.propagate = False
     trader.run_all()
 
 
