@@ -1,28 +1,37 @@
 [project]
-name = "pairs-trader"
+name = "algo-trading"
 version = "1.0.0"
-description = "Market-neutral pairs trading on Alpaca through LumiBot: long the cheap leg, short the rich one"
+description = "LumiBot trading strategies on Alpaca, with a dashboard"
 requires-python = ">=3.12"
 dependencies = [
     # Pinned exactly: LumiBot ships several releases a day, and Renovate bumps
     # this pin so each one arrives as a reviewable PR.
     "lumibot==4.6.0",
+    # Flask comes with LumiBot; waitress serves it without the dev server.
+    "waitress>=3,<4",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<10"]
 
 [project.scripts]
-pairs-trader = "pairs_trader.__main__:main"
+algo-trading = "algo_trading.__main__:main"
 
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["pairs_trader*"]
+include = ["algo_trading*", "strategies*"]
+
+[tool.setuptools.package-data]
+algo_trading = ["templates/*.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--import-mode=importlib"
-filterwarnings = ["error"]
+filterwarnings = [
+    "error",
+    # alpaca-py still imports websockets' legacy client; not ours to fix.
+    "ignore:websockets.legacy is deprecated:DeprecationWarning",
+]

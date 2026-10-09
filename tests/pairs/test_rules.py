@@ -2,7 +2,17 @@ import math
 
 import pytest
 
-from pairs_trader.strategy import Action, Fit, PairState, Params, Side, apply, decide, fit_spread, leg_notionals
+from strategies.pairs.rules import (
+    Action,
+    Fit,
+    PairState,
+    Params,
+    Side,
+    apply,
+    decide,
+    fit_spread,
+    leg_notionals,
+)
 
 P = Params()
 

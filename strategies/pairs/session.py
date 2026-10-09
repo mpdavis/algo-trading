@@ -13,7 +13,18 @@ from datetime import date
 from pathlib import Path
 from typing import Protocol
 
-from .strategy import EXITS, Action, Pair, PairState, Params, Side, apply, decide, fit_spread, leg_notionals
+from .rules import (
+    EXITS,
+    Action,
+    Pair,
+    PairState,
+    Params,
+    Side,
+    apply,
+    decide,
+    fit_spread,
+    leg_notionals,
+)
 
 log = logging.getLogger(__name__)
 
@@ -35,14 +46,24 @@ class Stored:
     cooldown: bool = False
 
 
+@dataclass(frozen=True)
+class Decision:
+    """The last session's reading of a pair, kept for the dashboard."""
+
+    z: float
+    beta: float
+    action: str
+
+
 class StateFile:
     def __init__(self, path: Path) -> None:
         self.path = path
 
+    def _raw(self) -> dict:
+        return json.loads(self.path.read_text()) if self.path.exists() else {}
+
     def load(self) -> tuple[date | None, dict[str, Stored]]:
-        if not self.path.exists():
-            return None, {}
-        raw = json.loads(self.path.read_text())
+        raw = self._raw()
         pairs = {
             name: Stored(
                 side=Side(p["side"]),
@@ -54,13 +75,17 @@ class StateFile:
         last = raw.get("last_session")
         return (date.fromisoformat(last) if last else None), pairs
 
-    def save(self, last_session: date, pairs: dict[str, Stored]) -> None:
+    def decisions(self) -> dict[str, Decision]:
+        return {name: Decision(**d) for name, d in self._raw().get("decisions", {}).items()}
+
+    def save(self, last_session: date, pairs: dict[str, Stored], decisions: dict[str, Decision] | None = None) -> None:
         raw = {
             "last_session": last_session.isoformat(),
             "pairs": {
                 name: {"side": s.side.value, "entered": s.entered.isoformat() if s.entered else None, "cooldown": s.cooldown}
                 for name, s in pairs.items()
             },
+            "decisions": {name: vars(d) for name, d in (decisions or {}).items()},
         }
         # Write-then-rename, so a crash mid-write cannot leave a truncated file.
         tmp = self.path.with_suffix(".tmp")
@@ -95,6 +120,7 @@ def run_session(broker: Broker, pairs: list[Pair], params: Params, state: StateF
     positions = broker.positions()
     equity = broker.equity()
     log.info("session %s equity=%.2f positions=%s", today, equity, {s: q for s, q in positions.items() if s in symbols})
+    decisions: dict[str, Decision] = {}
 
     for pair in pairs:
         prev = stored.get(pair.name, Stored())
@@ -130,6 +156,7 @@ def run_session(broker: Broker, pairs: list[Pair], params: Params, state: StateF
         action = decide(pstate, fit, params)
         log.info("%s: z=%+.2f beta=%.3f side=%s held=%d -> %s",
                  pair.name, fit.z, fit.beta, side.value, held_days, action.value)
+        decisions[pair.name] = Decision(z=round(fit.z, 3), beta=round(fit.beta, 4), action=action.value)
 
         if action in EXITS:
             _close_legs(broker, pair, positions)
@@ -145,7 +172,7 @@ def run_session(broker: Broker, pairs: list[Pair], params: Params, state: StateF
             entered = prev.entered
         stored[pair.name] = Stored(side=nxt.side, entered=entered, cooldown=nxt.cooldown)
 
-    state.save(today, stored)
+    state.save(today, stored, decisions)
     return True
 
 

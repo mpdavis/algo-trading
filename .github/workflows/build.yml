@@ -1,6 +1,6 @@
 name: Build Image
 
-# Builds this repo into ghcr.io/mpdavis/pairs-trader. Deployed from
+# Builds this repo into ghcr.io/mpdavis/algo-trading. Deployed from
 # docker/apps/trading/ in mpdavis/homelab, which pins a tag that Renovate bumps
 # there.
 #
@@ -20,7 +20,8 @@ on:
       - 'Dockerfile'
       - 'pyproject.toml'
       - 'README.md'
-      - 'pairs_trader/**'
+      - 'algo_trading/**'
+      - 'strategies/**'
       - '.github/workflows/build.yml'
   pull_request:
     paths: *image-paths
@@ -55,13 +56,13 @@ jobs:
           platforms: linux/amd64
           push: ${{ env.PUSH == 'true' }}
           tags: |
-            ghcr.io/mpdavis/pairs-trader:1.0.${{ github.run_number }}
-            ghcr.io/mpdavis/pairs-trader:latest
+            ghcr.io/mpdavis/algo-trading:1.0.${{ github.run_number }}
+            ghcr.io/mpdavis/algo-trading:latest
 
       - name: Print image tag
         run: |
           if [ "$PUSH" = "true" ]; then
-            echo "Published ghcr.io/mpdavis/pairs-trader:1.0.${{ github.run_number }}"
+            echo "Published ghcr.io/mpdavis/algo-trading:1.0.${{ github.run_number }}"
           else
             echo "Built only — ${GITHUB_REF} does not publish. Merge to main to push a tag."
           fi

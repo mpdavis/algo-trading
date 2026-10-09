@@ -1,56 +1,61 @@
-# pairs-trader
+# algo-trading
 
-Market-neutral pairs trading on an Alpaca account, run by
-[LumiBot](https://github.com/Lumiwealth/lumibot). For each pair it fits
-`log(Y) = alpha + beta * log(X)` over a rolling window, and when the spread
-stretches it buys the cheap stock and shorts the rich one, sized so the two
-legs offset each other. Both legs close together when the spread reverts.
+[LumiBot](https://github.com/Lumiwealth/lumibot) strategies trading an Alpaca
+account, plus a dashboard over the account and the strategies. One image runs
+any or all of the strategies, and the dashboard.
 
-## Rules
+## Strategies
 
-Once per trading day, at the open, using the previous sessions' closes:
+Each directory under `strategies/` is one strategy, named by the directory.
 
-| Spread z-score | Flat | Long spread (long Y, short X) | Short spread (short Y, long X) |
-|---|---|---|---|
-| ≤ −`ENTRY_Z`, > −`STOP_Z` | enter long spread | | |
-| ≥ `ENTRY_Z`, < `STOP_Z` | enter short spread | | |
-| crosses back inside `EXIT_Z` | | exit | exit |
-| beyond `STOP_Z` against the trade | | exit, cool down | exit, cool down |
-| held `MAX_HOLD_DAYS` sessions | | exit, cool down | exit, cool down |
+| Strategy | What it does |
+|---|---|
+| [`pairs`](strategies/pairs/README.md) | Market-neutral pairs trading: long the cheap stock, short the rich one, close both when the spread reverts |
 
-A pair in cooldown is not traded again until its spread is back inside
-`EXIT_Z`. Each pair gets `PAIR_GROSS` of account equity, split between the legs
-as `1 : beta`. Live shorts need the stock to be shortable and easy to borrow.
+`algo-trading list` prints what is installed.
 
-Account positions are the source of truth. The state file (`STATE_FILE`) only
-keeps each pair's entry day, its cooldown, and the last session traded. Every
-session reconciles: a pair closed by hand starts a cooldown, a pair found open
-is adopted, and a pair with one leg missing is flattened. A session waits while
-any of its orders are still open.
+### Adding one
+
+Create `strategies/<name>/__init__.py` that exports:
+
+- `STRATEGY`: a subclass of `algo_trading.base.ManagedStrategy`. Implement
+  `initialize` as in any LumiBot strategy, and `iterate` in place of
+  `on_trading_iteration`. Keep state under `self.data_dir`, which is
+  `/data/<name>` live and a temporary directory in backtests.
+- `status(data_dir) -> algo_trading.base.Status` (optional): facts and a table
+  for the dashboard, read from the strategy's state files.
+
+The package docstring's first paragraph is its description on the dashboard.
+Every entry in the strategy's `parameters` can be overridden by an environment
+variable named `<NAME>_<PARAMETER>`, for example `PAIRS_ENTRY_Z=2.5`.
+
+Strategies share one Alpaca account, so two of them must never trade the same
+symbol.
 
 ## Commands
 
 ```sh
-pairs-trader backtest --start 2024-10-09 --end 2025-10-08   # LumiBot on Yahoo daily bars, no keys needed
-pairs-trader live                                           # what the container runs
+algo-trading list
+algo-trading backtest pairs --start 2024-10-09 --end 2025-10-08   # Yahoo daily bars, no keys needed
+algo-trading live [NAME ...]        # default: $STRATEGIES (comma-separated), else every strategy
+algo-trading dashboard [--port 8080]
+algo-trading healthcheck [NAME ...] # fails unless each strategy iterated in the last 96 hours
 ```
 
 ## Configuration
 
 | Variable | Default | |
 |---|---|---|
-| `ALPACA_API_KEY`, `ALPACA_API_SECRET` | required for `live` | |
+| `ALPACA_API_KEY`, `ALPACA_API_SECRET` | required for `live` and `dashboard` | |
 | `ALPACA_IS_PAPER` | `true` | `false` also requires `ALLOW_LIVE_TRADING=yes` |
-| `PAIRS` | `JBHT/KNX,UPS/ODFL` | `Y/X`, comma-separated; a symbol may appear in one pair only |
-| `LOOKBACK` | `60` | sessions in the fit window |
-| `ENTRY_Z` / `EXIT_Z` / `STOP_Z` | `2.0` / `0.5` / `3.5` | |
-| `MAX_HOLD_DAYS` | `20` | sessions |
-| `PAIR_GROSS` | `0.5` | share of equity per pair, both legs |
-| `STATE_FILE` | `/data/state.json` | |
-| `HEARTBEAT_FILE` | `/tmp/heartbeat` | touched after every successful iteration |
+| `STRATEGIES` | every strategy | which ones `live`, `dashboard` and `healthcheck` cover |
+| `DATA_DIR` | `/data` | each strategy keeps state in `$DATA_DIR/<name>` |
+| `<NAME>_<PARAMETER>` | the strategy's default | e.g. `PAIRS_PAIRS=JBHT/KNX` |
 
-## Caveats
+## Dashboard
 
-Backtests fill at the open and do not charge borrow fees. Paper accounts do not
-charge them either; live accounts do. The trader assumes it is the only thing
-trading its symbols in the account.
+Read-only. It shows equity and the day's change, cash, buying power, long and
+short exposure, a three-month equity curve, every holding with its unrealized
+P&L, the 25 most recent orders, and for each strategy when it last iterated
+and its own status panel. Mount the data volume read-only into it. `/healthz`
+answers without touching Alpaca.

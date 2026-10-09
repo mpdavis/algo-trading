@@ -1,21 +1,18 @@
-"""Runs the pairs rules inside LumiBot. LumiBot owns scheduling, the broker
+"""The pairs rules as a LumiBot strategy. LumiBot owns scheduling, the broker
 connection and backtesting; each iteration hands `session.run_session` a
 `Broker` view of the strategy, so the decisions come from the tested code in
-`strategy.py` and `session.py`."""
+`rules.py` and `session.py`."""
 
 from __future__ import annotations
 
-import logging
-import tempfile
 from datetime import date
-from pathlib import Path
 
 from lumibot.strategies import Strategy
 
-from .session import StateFile, run_session
-from .strategy import Params, parse_pairs
+from algo_trading.base import ManagedStrategy
 
-log = logging.getLogger(__name__)
+from .rules import Params, parse_pairs
+from .session import StateFile, run_session
 
 
 class LumibotBroker:
@@ -64,8 +61,9 @@ class LumibotBroker:
         self.s.close_position(symbol)
 
 
-class PairsStrategy(Strategy):
+class PairsStrategy(ManagedStrategy):
     parameters = {
+        **ManagedStrategy.parameters,
         "pairs": "JBHT/KNX,UPS/ODFL",
         "lookback": 60,
         "entry_z": 2.0,
@@ -73,9 +71,6 @@ class PairsStrategy(Strategy):
         "stop_z": 3.5,
         "max_hold_days": 20,
         "pair_gross": 0.5,
-        # None keeps state in a temporary file, which is what a backtest wants.
-        "state_file": None,
-        "heartbeat_file": None,
     }
 
     def initialize(self) -> None:
@@ -95,22 +90,11 @@ class PairsStrategy(Strategy):
             max_hold_days=int(p["max_hold_days"]),
             pair_gross=float(p["pair_gross"]),
         )
-        path = p.get("state_file") or Path(tempfile.mkdtemp(prefix="pairs-")) / "state.json"
-        self.state = StateFile(Path(path))
-        self.heartbeat = Path(p["heartbeat_file"]) if p.get("heartbeat_file") else None
+        self.state = StateFile(self.data_dir / "state.json")
         self.view = LumibotBroker(self)
 
-    def on_trading_iteration(self) -> None:
+    def iterate(self) -> None:
         today = self.get_datetime().date()
         last, _ = self.state.load()
         if last != today:
-            try:
-                run_session(self.view, self.pairs, self.rules, self.state, today)
-            except Exception:
-                # The session stays unrecorded, so the next iteration retries it.
-                # Positions are re-read then, so a half-placed entry is repaired
-                # rather than repeated. A stale heartbeat marks the container unhealthy.
-                log.exception("session failed; retrying next iteration")
-                return
-        if self.heartbeat:
-            self.heartbeat.touch()
+            run_session(self.view, self.pairs, self.rules, self.state, today)

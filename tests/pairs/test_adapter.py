@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import pandas as pd
 
-from pairs_trader.lumibot_strategy import LumibotBroker
+from strategies.pairs.strategy import LumibotBroker
 
 
 class FakeStrategy:
