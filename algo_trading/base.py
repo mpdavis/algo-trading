@@ -9,6 +9,8 @@ from pathlib import Path
 
 from lumibot.strategies import Strategy
 
+from .heartbeat import heartbeat
+
 log = logging.getLogger(__name__)
 
 
@@ -54,7 +56,3 @@ class ManagedStrategy(Strategy):
             log.exception("%s: iteration failed", self.name)
             return
         heartbeat(self.data_dir).touch()
-
-
-def heartbeat(data_dir: Path) -> Path:
-    return data_dir / "heartbeat"

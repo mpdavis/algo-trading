@@ -12,7 +12,8 @@ from typing import Any
 
 from flask import Flask, render_template
 
-from .base import Status, heartbeat
+from .base import Status
+from .heartbeat import heartbeat
 from .registry import Entry
 
 log = logging.getLogger(__name__)

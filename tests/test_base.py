@@ -2,7 +2,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from algo_trading.base import ManagedStrategy, heartbeat
+from algo_trading.base import ManagedStrategy
+from algo_trading.heartbeat import heartbeat
 
 
 def fake(tmp_path, iterate, backtesting=False):
