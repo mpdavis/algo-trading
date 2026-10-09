@@ -30,4 +30,4 @@ WORKDIR /tmp
 VOLUME ["/data"]
 
 ENTRYPOINT ["pairs-trader"]
-CMD ["daemon"]
+CMD ["live"]
