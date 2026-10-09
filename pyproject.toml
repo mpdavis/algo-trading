@@ -1,0 +1,28 @@
+[project]
+name = "pairs-trader"
+version = "1.0.0"
+description = "Market-neutral pairs trading on Alpaca through LumiBot: long the cheap leg, short the rich one"
+requires-python = ">=3.12"
+dependencies = [
+    # Pinned exactly: LumiBot ships several releases a day, and Renovate bumps
+    # this pin so each one arrives as a reviewable PR.
+    "lumibot==4.6.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10"]
+
+[project.scripts]
+pairs-trader = "pairs_trader.__main__:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["pairs_trader*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--import-mode=importlib"
+filterwarnings = ["error"]

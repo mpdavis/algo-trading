@@ -1,0 +1,20 @@
+# hadolint config for the Dockerfile — see .github/workflows/lint-dockerfile.yml
+#
+# Advisory check (not on main's ruleset). The intent is to catch new problems,
+# not to relitigate deliberate choices, so a few rules start disabled. Tighten by
+# removing entries here once the Dockerfile is clean.
+
+failure-threshold: warning
+
+ignored:
+  # Tool versions are pinned as renovate-annotated ARGs and the distro package
+  # set is "whatever the base image ships". Pinning apt/pip/apk versions on top
+  # of that buys churn, not reproducibility.
+  - DL3008  # pin versions in apt-get install
+  - DL3013  # pin versions in pip install
+  - DL3018  # pin versions in apk add
+  - DL4006  # set SHELL with -o pipefail before RUN with a pipe
+
+trustedRegistries:
+  - docker.io
+  - ghcr.io

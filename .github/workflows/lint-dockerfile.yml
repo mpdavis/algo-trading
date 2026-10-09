@@ -1,0 +1,41 @@
+name: Lint · Dockerfile
+
+# hadolint over the Dockerfile. Advisory: NOT on main's ruleset, and
+# paths-filtered — it only runs when the Dockerfile (or its config) changes.
+
+on:
+  pull_request:
+    paths:
+      - 'Dockerfile'
+      - '.hadolint.yaml'
+      - '.github/workflows/lint-dockerfile.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lint-dockerfile-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # renovate: datasource=github-releases depName=hadolint/hadolint
+  HADOLINT_VERSION: "v2.15.1"
+
+jobs:
+  hadolint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install hadolint
+        run: |
+          mkdir -p "$RUNNER_TEMP/bin"
+          curl -sSfL \
+            "https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-Linux-x86_64" \
+            -o "$RUNNER_TEMP/bin/hadolint"
+          chmod +x "$RUNNER_TEMP/bin/hadolint"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+
+      - name: Run hadolint
+        run: hadolint --config .hadolint.yaml Dockerfile

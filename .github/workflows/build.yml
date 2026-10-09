@@ -1,0 +1,67 @@
+name: Build Image
+
+# Builds this repo into ghcr.io/mpdavis/pairs-trader. Deployed from
+# docker/apps/trading/ in mpdavis/homelab, which pins a tag that Renovate bumps
+# there.
+#
+# The unit tests are NOT here: they are the required check on main, and a
+# required check cannot live behind this workflow's `paths` filter. See
+# tests.yml.
+#
+# ONLY main PUBLISHES. Renovate picks bumps by reading the registry's tag list,
+# which carries no provenance, so any tag this workflow pushes is a tag the
+# host can end up running. Pull requests still build (never push) so a broken
+# Dockerfile fails the PR rather than main.
+
+on:
+  push:
+    branches: [main]
+    paths: &image-paths
+      - 'Dockerfile'
+      - 'pyproject.toml'
+      - 'README.md'
+      - 'pairs_trader/**'
+      - '.github/workflows/build.yml'
+  pull_request:
+    paths: *image-paths
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      PUSH: ${{ github.ref == 'refs/heads/main' }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - if: env.PUSH == 'true'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64
+          push: ${{ env.PUSH == 'true' }}
+          tags: |
+            ghcr.io/mpdavis/pairs-trader:1.0.${{ github.run_number }}
+            ghcr.io/mpdavis/pairs-trader:latest
+
+      - name: Print image tag
+        run: |
+          if [ "$PUSH" = "true" ]; then
+            echo "Published ghcr.io/mpdavis/pairs-trader:1.0.${{ github.run_number }}"
+          else
+            echo "Built only — ${GITHUB_REF} does not publish. Merge to main to push a tag."
+          fi

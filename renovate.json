@@ -1,0 +1,47 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "customManagers": [
+    {
+      "description": "Bump tool versions pinned as annotated ARGs in the Dockerfile.",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^Dockerfile$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)\\nARG [A-Z_]+=(?<currentValue>[^\\s]+)"
+      ]
+    },
+    {
+      "description": "Bump tool versions pinned as annotated env vars in GitHub workflows (e.g. hadolint in lint-dockerfile.yml). The github-actions manager only sees `uses:` refs.",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/.+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)\\n\\s+[A-Z_]+: \"(?<currentValue>[^\"]+)\""
+      ]
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Major version bumps usually require migration steps. Gate them behind manual approval on the dependency dashboard instead of opening PRs automatically.",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "Auto-merge digest, patch and minor bumps. Uses GitHub's native auto-merge (platformAutomerge), so the PR only lands once the REQUIRED `test` check on main's ruleset passes. A merge that touches the image publishes a new tag, which homelab's Renovate then rolls out.",
+      "matchUpdateTypes": [
+        "digest",
+        "patch",
+        "minor"
+      ],
+      "automerge": true,
+      "platformAutomerge": true
+    }
+  ]
+}
