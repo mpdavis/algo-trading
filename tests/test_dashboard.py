@@ -1,8 +1,9 @@
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
-from algo_trading.base import Status, heartbeat
+from algo_trading.base import Status
 from algo_trading.dashboard import create_app, sparkline
+from algo_trading.heartbeat import heartbeat
 from algo_trading.registry import Entry
 from strategies.pairs import PairsStrategy
 

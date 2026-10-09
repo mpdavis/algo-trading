@@ -50,6 +50,7 @@ def cmd_live(names: list[str]) -> None:
     from lumibot.brokers import Alpaca
     from lumibot.traders import Trader
 
+    from .heartbeat import heartbeat
     from .registry import discover, parameters_from_env, select
 
     key, secret, paper = alpaca_credentials()
@@ -58,8 +59,13 @@ def cmd_live(names: list[str]) -> None:
     show_strategy_logs()
     trader = Trader()
     for entry in entries:
+        data_dir = data_root() / entry.name
+        data_dir.mkdir(parents=True, exist_ok=True)
+        # A fresh start counts as alive, so a deploy outside market hours is
+        # healthy at once; from then on only completed iterations advance it.
+        heartbeat(data_dir).touch()
         params = parameters_from_env(entry, os.environ)
-        params["data_dir"] = str(data_root() / entry.name)
+        params["data_dir"] = str(data_dir)
         trader.add_strategy(entry.strategy(broker=broker, name=entry.name, parameters=params))
     trader.run_all()
 
@@ -109,7 +115,7 @@ def cmd_dashboard(port: int) -> None:
 def cmd_healthcheck(names: list[str], max_age_hours: float) -> None:
     """Exit non-zero unless every selected strategy's heartbeat is fresh. Reads
     only files, so it stays cheap enough for a frequent container healthcheck."""
-    from .base import heartbeat
+    from .heartbeat import heartbeat
 
     selected = wanted(names)
     if not selected:

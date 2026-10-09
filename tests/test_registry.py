@@ -4,7 +4,8 @@ import time
 import pytest
 
 from algo_trading.__main__ import cmd_healthcheck
-from algo_trading.base import ManagedStrategy, heartbeat
+from algo_trading.base import ManagedStrategy
+from algo_trading.heartbeat import heartbeat
 from algo_trading.registry import Entry, discover, parameters_from_env, select
 from strategies.pairs import PairsStrategy
 
@@ -63,3 +64,18 @@ def test_healthcheck_reads_strategies_from_env(tmp_path, monkeypatch):
         (tmp_path / name).mkdir()
         heartbeat(tmp_path / name).touch()
     cmd_healthcheck([], max_age_hours=1)
+
+
+def test_healthcheck_does_not_import_lumibot(tmp_path):
+    import subprocess
+    import sys
+
+    (tmp_path / "pairs").mkdir()
+    (tmp_path / "pairs" / "heartbeat").touch()
+    code = (
+        "import sys; from algo_trading.__main__ import cmd_healthcheck; "
+        "cmd_healthcheck(['pairs'], 96); print('lumibot' in sys.modules)"
+    )
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True,
+                         env={"DATA_DIR": str(tmp_path), "PATH": ""})
+    assert out.stdout.strip() == "False"
