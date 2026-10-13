@@ -18,6 +18,15 @@ COPY algo_trading/ ./algo_trading/
 COPY strategies/ ./strategies/
 RUN pip install --no-cache-dir --no-deps .
 
+# The image tag and commit, from build.yml; shown on the dashboard and logged
+# at startup. Set after the installs so a new version does not bust their cache.
+ARG VERSION=dev
+ARG REVISION=unknown
+ENV APP_VERSION=$VERSION \
+    APP_REVISION=$REVISION
+LABEL org.opencontainers.image.version=$VERSION \
+      org.opencontainers.image.revision=$REVISION
+
 RUN useradd --uid 1000 --create-home --shell /usr/sbin/nologin trader \
     && mkdir -p /data \
     && chown 1000:1000 /data

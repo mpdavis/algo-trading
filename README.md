@@ -59,7 +59,8 @@ algo-trading healthcheck [NAME ...] # fails unless each strategy iterated in the
 
 ## Dashboard
 
-Read-only. It shows equity and the day's change, cash, buying power, long and
+Read-only. Its header shows the running image version and commit (`dev`
+outside a published image; `live` logs the same line at startup). It shows equity and the day's change, cash, buying power, long and
 short exposure, a three-month equity curve, every holding with its unrealized
 P&L, the 25 most recent orders, and for each strategy when it last iterated
 and its own status panel. Mount the data volume read-only into it. `/healthz`

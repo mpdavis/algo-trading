@@ -52,6 +52,7 @@ def cmd_live(names: list[str]) -> None:
 
     from .heartbeat import heartbeat
     from .registry import check_disjoint, discover, parameters_from_env, select
+    from .version import version
 
     key, secret, paper = alpaca_credentials()
     available = discover()
@@ -59,6 +60,8 @@ def cmd_live(names: list[str]) -> None:
     entries = select(available, wanted(names))
     broker = Alpaca({"API_KEY": key, "API_SECRET": secret, "PAPER": paper})
     show_strategy_logs()
+    logging.getLogger("algo_trading").info("algo-trading %s starting: %s", version(os.environ),
+                                           ", ".join(e.name for e in entries))
     trader = Trader()
     for entry in entries:
         data_dir = data_root() / entry.name

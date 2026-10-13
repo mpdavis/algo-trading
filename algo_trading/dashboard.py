@@ -15,6 +15,7 @@ from flask import Flask, render_template
 from .base import Status
 from .heartbeat import heartbeat
 from .registry import Entry
+from .version import version
 
 log = logging.getLogger(__name__)
 
@@ -142,6 +143,7 @@ def create_app(client_factory: Callable[[], Any], entries: list[Entry], data_roo
                environ: Mapping[str, str] | None = None) -> Flask:
     app = Flask(__name__)
     paper = (environ or {}).get("ALPACA_IS_PAPER", "true").lower() != "false"
+    running = version(environ or {})
 
     @app.template_filter("money")
     def money(value: float | None) -> str:
@@ -175,6 +177,7 @@ def create_app(client_factory: Callable[[], Any], entries: list[Entry], data_roo
             "index.html",
             snap=snap,
             paper=paper,
+            version=running,
             spark=sparkline(snap.equity_curve),
             now=datetime.now(timezone.utc),
         )
