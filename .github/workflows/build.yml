@@ -55,6 +55,11 @@ jobs:
           context: .
           platforms: linux/amd64
           push: ${{ env.PUSH == 'true' }}
+          # Stamped into the image so the dashboard and the logs can say what
+          # is running. Pull requests build as "pr", since they never publish.
+          build-args: |
+            VERSION=${{ env.PUSH == 'true' && format('1.0.{0}', github.run_number) || 'pr' }}
+            REVISION=${{ github.sha }}
           tags: |
             ghcr.io/mpdavis/algo-trading:1.0.${{ github.run_number }}
             ghcr.io/mpdavis/algo-trading:latest

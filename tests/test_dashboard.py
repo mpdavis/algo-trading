@@ -93,6 +93,13 @@ def test_live_account_is_flagged(tmp_path):
     assert "Live money" in client(app).get("/").get_data(as_text=True)
 
 
+def test_header_shows_the_running_version(tmp_path):
+    env = {"APP_VERSION": "1.0.14", "APP_REVISION": "75df87d6999e5a9221a2911ed5e26eb0d870797c"}
+    page = client(create_app(lambda: FakeAlpaca(), [], tmp_path, env)).get("/").get_data(as_text=True)
+    assert "version 1.0.14 (75df87d)" in page
+    assert "version dev" in client(create_app(lambda: FakeAlpaca(), [], tmp_path)).get("/").get_data(as_text=True)
+
+
 def test_healthz(tmp_path):
     assert client(create_app(lambda: FakeAlpaca(), [], tmp_path)).get("/healthz").data == b"ok"
 

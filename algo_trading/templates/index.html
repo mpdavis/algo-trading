@@ -67,7 +67,7 @@
   <header>
     <h1>Algo Trading</h1>
     <span class="chip {{ 'paper' if paper else 'live' }}">{{ 'Paper' if paper else 'Live money' }}</span>
-    <span class="meta">Updated {{ now.strftime('%Y-%m-%d %H:%M UTC') }} · refreshes every minute</span>
+    <span class="meta">Updated {{ now.strftime('%Y-%m-%d %H:%M UTC') }} · refreshes every minute · version {{ version }}</span>
   </header>
 
   {% if snap.errors %}
