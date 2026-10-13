@@ -36,6 +36,11 @@ symbol. A strategy declares the symbols it may trade by overriding
 `ManagedStrategy.symbols(parameters)`; `algo-trading live` refuses to start
 when two strategies' symbols overlap.
 
+`live` runs its strategies side by side in one process, on one broker and one
+Alpaca trading stream (Alpaca allows one per account). Each position and order
+belongs to the strategy whose symbols include it. If any strategy crashes, the
+process exits non-zero, so the container restarts with all of them.
+
 ## Commands
 
 ```sh

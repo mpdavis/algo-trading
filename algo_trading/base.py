@@ -32,6 +32,9 @@ class ManagedStrategy(Strategy):
     `on_trading_iteration`."""
 
     parameters: dict = {"data_dir": None}
+    # What LumiBot reported to on_bot_crash, if anything; the live runner
+    # stops the process on it.
+    crash: BaseException | None = None
 
     @classmethod
     def symbols(cls, parameters: dict) -> set[str]:
@@ -62,3 +65,10 @@ class ManagedStrategy(Strategy):
             log.exception("%s: iteration failed", self.name)
             return
         heartbeat(self.data_dir).touch()
+
+    def on_bot_crash(self, error: BaseException) -> None:
+        # LumiBot calls this when something outside `iterate` fails, such as
+        # starting up or its own session loop, and then carries on: a failed
+        # session is retried in place, however often it fails.
+        self.crash = error
+        super().on_bot_crash(error)

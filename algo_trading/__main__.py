@@ -47,22 +47,21 @@ def cmd_list() -> None:
 
 
 def cmd_live(names: list[str]) -> None:
-    from lumibot.brokers import Alpaca
-    from lumibot.traders import Trader
-
     from .heartbeat import heartbeat
+    from .live import SharedAlpaca, run
     from .registry import check_disjoint, discover, parameters_from_env, select
     from .version import version
 
     key, secret, paper = alpaca_credentials()
     available = discover()
-    check_disjoint(list(available.values()), os.environ)
+    owners = check_disjoint(list(available.values()), os.environ)
     entries = select(available, wanted(names))
-    broker = Alpaca({"API_KEY": key, "API_SECRET": secret, "PAPER": paper})
+    # One broker for every strategy: Alpaca allows one trading stream per account.
+    broker = SharedAlpaca({"API_KEY": key, "API_SECRET": secret, "PAPER": paper}, owners)
     show_strategy_logs()
-    logging.getLogger("algo_trading").info("algo-trading %s starting: %s", version(os.environ),
-                                           ", ".join(e.name for e in entries))
-    trader = Trader()
+    log = logging.getLogger("algo_trading")
+    log.info("algo-trading %s starting: %s", version(os.environ), ", ".join(e.name for e in entries))
+    strategies = []
     for entry in entries:
         data_dir = data_root() / entry.name
         data_dir.mkdir(parents=True, exist_ok=True)
@@ -71,8 +70,16 @@ def cmd_live(names: list[str]) -> None:
         heartbeat(data_dir).touch()
         params = parameters_from_env(entry, os.environ)
         params["data_dir"] = str(data_dir)
-        trader.add_strategy(entry.strategy(broker=broker, name=entry.name, parameters=params))
-    trader.run_all()
+        # Without a data source of its own, a LumiBot strategy builds a whole
+        # default broker, trading stream included, just to borrow one.
+        strategies.append(entry.strategy(broker=broker, data_source=broker.data_source, name=entry.name,
+                                         parameters=params))
+    crashed = run(strategies)
+    log.error("%s crashed; exiting so the container restarts", crashed)
+    logging.shutdown()
+    # Not sys.exit: interpreter shutdown joins LumiBot's worker threads, and
+    # one stuck in a broker request would keep a half-dead trader running.
+    os._exit(1)
 
 
 def backtest_source(data: str) -> tuple[type, dict]:
@@ -171,6 +178,12 @@ def main() -> None:
     # Iterations run only in market hours; four days covers a holiday weekend.
     hc.add_argument("--max-age-hours", type=float, default=96)
     args = ap.parse_args()
+
+    # With Alpaca keys in the environment, importing LumiBot builds a default
+    # broker, and that opens a trading stream of its own. Alpaca allows one per
+    # account and rejects the next with HTTP 429; every command here builds
+    # the broker or client it needs instead.
+    os.environ["LUMIBOT_LAZY_CREDENTIALS"] = "true"
 
     if args.cmd == "list":
         cmd_list()
