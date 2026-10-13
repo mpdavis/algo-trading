@@ -7,6 +7,7 @@ from algo_trading.__main__ import cmd_healthcheck
 from algo_trading.base import ManagedStrategy
 from algo_trading.heartbeat import heartbeat
 from algo_trading.registry import Entry, check_disjoint, discover, parameters_from_env, select
+from strategies.orb import OrbStrategy
 from strategies.pairs import PairsStrategy
 from strategies.selloff import SelloffStrategy
 
@@ -23,6 +24,13 @@ def test_discovers_selloff():
     assert entry.strategy is SelloffStrategy
     assert entry.status is not None
     assert entry.summary.startswith("Long mean reversion after a selloff")
+
+
+def test_discovers_orb():
+    entry = discover()["orb"]
+    assert entry.strategy is OrbStrategy
+    assert entry.status is not None
+    assert entry.summary.startswith("Intraday opening range breakout on SPY")
 
 
 def test_installed_strategies_trade_disjoint_symbols_by_default():

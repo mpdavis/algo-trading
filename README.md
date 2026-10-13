@@ -11,6 +11,7 @@ Each directory under `strategies/` is one strategy, named by the directory.
 | Strategy | What it does |
 |---|---|
 | [`pairs`](strategies/pairs/README.md) | Market-neutral pairs trading: long the cheap stock, short the rich one, close both when the spread reverts |
+| [`orb`](strategies/orb/README.md) | Intraday opening range breakout on SPY: trade the first break of the first five minutes' range, stop at its far side, flat by 15:50 |
 | [`selloff`](strategies/selloff/README.md) | Long mean reversion: bid 7% under stocks in an uptrend that just fell 12.5% in three days, sell on a 4% gain, a stop, or after three days |
 
 `algo-trading list` prints what is installed.
@@ -40,6 +41,7 @@ when two strategies' symbols overlap.
 ```sh
 algo-trading list
 algo-trading backtest pairs --start 2024-10-09 --end 2025-10-08   # Yahoo daily bars, no keys needed
+algo-trading backtest orb --data alpaca --start 2026-07-01 --end 2026-10-01   # Alpaca minute bars, paper keys
 algo-trading live [NAME ...]        # default: $STRATEGIES (comma-separated), else every strategy
 algo-trading dashboard [--port 8080]
 algo-trading healthcheck [NAME ...] # fails unless each strategy iterated in the last 96 hours
