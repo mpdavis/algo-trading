@@ -72,14 +72,30 @@ def cmd_live(names: list[str]) -> None:
     trader.run_all()
 
 
-def cmd_backtest(name: str, start: str, end: str, budget: float) -> None:
-    from lumibot.backtesting import YahooDataBacktesting
+def backtest_source(data: str) -> tuple[type, dict]:
+    """The LumiBot data source and its arguments. Yahoo has daily bars and
+    needs no keys; Alpaca has minute bars, for intraday strategies, and needs
+    paper keys."""
+    if data == "yahoo":
+        from lumibot.backtesting import YahooDataBacktesting
 
+        return YahooDataBacktesting, {}
+    from lumibot.backtesting import AlpacaBacktesting
+
+    key, secret, paper = alpaca_credentials()
+    if not paper:
+        sys.exit("Alpaca backtests need paper keys (ALPACA_IS_PAPER=true)")
+    config = {"API_KEY": key, "API_SECRET": secret, "PAPER": True}
+    return AlpacaBacktesting, {"config": config, "timestep": "minute", "market": "NYSE"}
+
+
+def cmd_backtest(name: str, start: str, end: str, budget: float, data: str) -> None:
     from .registry import discover, parameters_from_env, select
 
     (entry,) = select(discover(), [name])
+    source, extra = backtest_source(data)
     out = entry.strategy.run_backtest(
-        YahooDataBacktesting,
+        source,
         datetime.fromisoformat(start),
         datetime.fromisoformat(end),
         budget=budget,
@@ -91,6 +107,7 @@ def cmd_backtest(name: str, start: str, end: str, budget: float) -> None:
         save_tearsheet=False,
         show_indicators=False,
         show_progress_bar=False,
+        **extra,
     )
     results = out[0] if isinstance(out, tuple) else out
     for key in ("total_return", "cagr", "volatility", "sharpe", "max_drawdown", "romad"):
@@ -137,11 +154,13 @@ def main() -> None:
     sub.add_parser("list", help="list the strategies in strategies/")
     live = sub.add_parser("live", help="trade the Alpaca account with the named strategies (default: STRATEGIES, else all)")
     live.add_argument("names", nargs="*")
-    bt = sub.add_parser("backtest", help="replay one strategy in LumiBot on Yahoo daily bars")
+    bt = sub.add_parser("backtest", help="replay one strategy in LumiBot")
     bt.add_argument("name")
     bt.add_argument("--start", required=True)
     bt.add_argument("--end", default=datetime.now().date().isoformat())
     bt.add_argument("--budget", type=float, default=100_000.0)
+    bt.add_argument("--data", choices=["yahoo", "alpaca"], default="yahoo",
+                    help="yahoo: daily bars, no keys; alpaca: minute bars, needs paper keys (for orb)")
     dash = sub.add_parser("dashboard", help="serve the account and strategy dashboard")
     dash.add_argument("--port", type=int, default=8080)
     hc = sub.add_parser("healthcheck", help="fail unless each strategy iterated recently")
@@ -155,7 +174,7 @@ def main() -> None:
     elif args.cmd == "live":
         cmd_live(args.names)
     elif args.cmd == "backtest":
-        cmd_backtest(args.name, args.start, args.end, args.budget)
+        cmd_backtest(args.name, args.start, args.end, args.budget, args.data)
     elif args.cmd == "dashboard":
         cmd_dashboard(args.port)
     else:
