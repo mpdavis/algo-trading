@@ -15,6 +15,8 @@ runs `live`, another runs `dashboard`, both from the same image.
 - `algo_trading/`: the framework. `base.py` (`ManagedStrategy`, `Status`, the
   heartbeat), `registry.py` (finding strategies, env parameter overrides),
   `dashboard.py` and `templates/`, and the CLI in `__main__.py`.
+- `DESIGN.md`: the dashboard's design system (white canvas, one blue accent,
+  rounded bordered cards; light only). Follow it when changing `templates/`.
 - `strategies/<name>/`: one LumiBot strategy each. Keep a strategy's trading
   logic free of LumiBot where it can be, as `pairs` does, so it is testable
   without a broker.
