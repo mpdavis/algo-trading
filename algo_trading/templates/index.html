@@ -5,110 +5,98 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="refresh" content="60">
 <title>Algo Trading</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap">
 <style>
-  /* Warm glass, per DESIGN.md: cream ground, frosted surfaces, editorial serif. Light only. */
+  /* Per DESIGN.md: white canvas, one blue accent, rounded bordered cards, calm type. Light only. */
   :root {
-    --bg: #faf8f2;
-    --bg-gradient: radial-gradient(at 30% 0%, #fff4e0 0%, transparent 50%),
-                   radial-gradient(at 80% 20%, #f4e4d4 0%, transparent 60%);
-    --surface: rgba(255, 251, 244, 0.7);
-    --text: #1a1814; --text-muted: #6a5f52; --text-faint: #978a7a;
-    --border: rgba(26, 24, 20, 0.08);
-    --accent: #b45837; --accent-soft: #e4b894;
-    --up: #557636; --down: #a63d2c; --warn: #a8741c;
-    --highlight: inset 0 1px 0 rgba(255, 255, 255, 0.6);
-    --shadow: 0 8px 32px rgba(180, 88, 55, 0.08);
-    --blur: blur(16px) saturate(150%);
-    --serif: "PP Editorial New", "Tiempos Headline", "Newsreader", Georgia, serif;
-    --sans: "Söhne", "Inter", -apple-system, "Segoe UI", sans-serif;
+    --blue: #0052ff; --blue-soft: #eef4ff; --white: #ffffff; --ink: #0a0b0d; --muted: #5b616e;
+    --border: #e3e8ef; --surface: #f7f9fc; --success: #098551; --danger: #cf202f;
+    --shadow-soft: 0 6px 18px rgba(10, 11, 13, 0.05);
+    --shadow-card: 0 12px 28px rgba(10, 11, 13, 0.06);
+    --sans: "Coinbase Sans", "Helvetica Neue", Arial, sans-serif;
     color-scheme: light;
   }
   * { box-sizing: border-box; }
-  html { background: var(--bg); }
-  body { margin: 0; min-height: 100vh; color: var(--text); font: 400 15px/1.55 var(--sans);
-         background: var(--bg-gradient), var(--bg); background-attachment: fixed;
+  body { margin: 0; background: var(--white); color: var(--ink); font: 400 16px/1.55 var(--sans);
          -webkit-font-smoothing: antialiased; }
-  main { max-width: 1000px; margin: 0 auto; padding: 56px 24px 80px; display: grid;
+  main { max-width: 1120px; margin: 0 auto; padding: 64px 32px 80px; display: grid;
          grid-template-columns: minmax(0, 1fr); gap: 48px; }
-  h1, h2, h3 { font-family: var(--serif); font-weight: 400; letter-spacing: -0.01em; margin: 0; }
-  h1 { font-size: 52px; line-height: 1.05; }
-  h2 { font-size: 26px; line-height: 1.2; margin-bottom: 16px; }
-  h3 { font-size: 20px; line-height: 1.3; }
+  h1, h2, h3 { font-weight: 600; margin: 0; color: var(--ink); }
+  h1 { font-size: 48px; line-height: 1.08; letter-spacing: -0.02em; }
+  h2 { font-size: 24px; line-height: 1.2; letter-spacing: -0.01em; margin-bottom: 16px; }
+  h3 { font-size: 18px; line-height: 1.3; }
   .num, .value, .sub, .axis, .facts dd { font-variant-numeric: tabular-nums; }
 
-  header { display: grid; gap: 14px; }
-  .badges { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
-  .meta { color: var(--text-muted); font-size: 13px; }
-  .chip { font: 500 13px/1 var(--sans); padding: 5px 11px; border-radius: 999px; white-space: nowrap;
-          background: var(--surface); border: 1px solid var(--border); box-shadow: var(--highlight);
-          backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-  .chip::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%;
-                  background: currentColor; margin-right: 7px; vertical-align: 2px; }
-  .chip.paper { color: var(--accent); }
-  .chip.live { color: #faf8f2; background: var(--down); border-color: transparent; }
-  .chip.ok { color: var(--up); }
-  .chip.stale { color: var(--warn); }
-  .chip.off { color: var(--text-muted); }
+  header { display: grid; gap: 16px; }
+  .badges { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+  .meta { color: var(--muted); font-size: 14px; line-height: 1.45; }
+  .chip { font: 600 12px/1 var(--sans); letter-spacing: 0.04em; padding: 7px 12px; border-radius: 999px;
+          white-space: nowrap; background: var(--surface); color: var(--muted); }
+  .chip.paper { background: var(--blue-soft); color: var(--blue); }
+  .chip.live { background: var(--danger); color: var(--white); }
+  .chip.ok { background: rgba(9, 133, 81, 0.1); color: var(--success); }
+  .chip.stale { background: rgba(207, 32, 47, 0.08); color: var(--danger); }
 
-  .glass { background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
-           box-shadow: var(--highlight), var(--shadow);
-           backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); }
-  .panel { padding: 22px 24px; min-width: 0; }
+  .card { background: var(--white); border: 1px solid var(--border); border-radius: 24px;
+          box-shadow: var(--shadow-card); }
+  .panel { padding: 24px; min-width: 0; }
 
-  .errors { padding: 16px 22px; color: var(--down); background: rgba(250, 232, 222, 0.75); }
+  .errors { padding: 16px 24px; border-radius: 16px; color: var(--danger);
+            background: rgba(207, 32, 47, 0.06); border: 1px solid rgba(207, 32, 47, 0.2); }
   .errors p { margin: 0; } .errors p + p { margin-top: 4px; }
 
   .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
-  .stat { padding: 18px 20px; display: grid; gap: 4px; align-content: start; }
-  .stat .label { color: var(--text-muted); font-size: 13px; }
-  .stat .value { font: 400 26px/1.15 var(--serif); }
-  .stat .sub { font-size: 13px; color: var(--text-muted); }
-  .stat.hero { grid-column: 1 / -1; padding: 28px 28px 24px; }
-  .stat.hero .value { font-size: 52px; line-height: 1.05; letter-spacing: -0.02em; }
-  .stat.hero .sub { font-size: 15px; }
-  .up { color: var(--up) !important; } .down { color: var(--down) !important; }
+  .stat { padding: 20px 24px; display: grid; gap: 6px; align-content: start; box-shadow: var(--shadow-soft); }
+  .stat .label { color: var(--muted); font: 600 12px/1.3 var(--sans); letter-spacing: 0.04em; }
+  .stat .value { font-size: 24px; font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; }
+  .stat .sub { font-size: 14px; font-weight: 600; color: var(--muted); }
+  .stat.hero { grid-column: 1 / -1; padding: 32px; background: var(--blue-soft); border-color: transparent;
+               box-shadow: none; }
+  .stat.hero .value { font-size: 48px; line-height: 1.08; letter-spacing: -0.02em; }
+  .stat.hero .sub { font-size: 16px; }
+  .up { color: var(--success) !important; } .down { color: var(--danger) !important; }
 
-  .chart svg { width: 100%; height: 160px; display: block; overflow: visible; }
-  .chart polyline { fill: none; stroke: var(--accent); stroke-width: 1.75; stroke-linejoin: round;
+  .chart svg { width: 100%; height: 180px; display: block; overflow: visible; }
+  .chart polyline { fill: none; stroke: var(--blue); stroke-width: 2; stroke-linejoin: round;
                     stroke-linecap: round; vector-effect: non-scaling-stroke; }
   .chart polygon { fill: url(#equity-fill); stroke: none; }
-  .chart .axis { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px;
-                 color: var(--text-muted); font-size: 13px; }
+  .chart .axis { display: flex; justify-content: space-between; gap: 12px; margin-top: 16px;
+                 color: var(--muted); font-size: 14px; }
 
   .scroll { overflow-x: auto; margin: 0 -24px; padding: 0 24px; }
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
+  th, td { padding: 12px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
+  td { height: 48px; }
   th:first-child, td:first-child { padding-left: 0; } th:last-child, td:last-child { padding-right: 0; }
-  th { color: var(--text-muted); font-weight: 500; font-size: 13px; }
+  th { color: var(--muted); font: 600 12px/1.3 var(--sans); letter-spacing: 0.04em; }
   tbody tr:last-child td { border-bottom: 0; }
   td.num, th.num { text-align: right; }
-  td .meta { margin-left: 4px; }
-  .empty { font: italic 400 17px/1.5 var(--serif); color: var(--text-muted); margin: 0; }
+  td:first-child { font-weight: 600; }
+  .orders td:first-child { font-weight: 400; }
+  td .meta { margin-left: 4px; font-weight: 400; }
+  .empty { color: var(--muted); font-size: 14px; margin: 0; }
 
   .strategies { display: grid; gap: 16px; }
   .strategy-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 8px; }
   .strategy-head .meta { margin-left: auto; }
-  .summary { color: var(--text-muted); margin: 0 0 16px; max-width: 680px; font-size: 15px; }
-  .facts { display: flex; flex-wrap: wrap; gap: 6px 28px; margin: 0 0 16px; font-size: 14px; }
-  .facts dt { color: var(--text-muted); display: inline; }
-  .facts dd { display: inline; margin: 0 0 0 6px; }
-  .strategy .error { margin: 0 0 12px; }
+  .summary { color: var(--muted); margin: 0 0 16px; max-width: 75ch; font-size: 14px; line-height: 1.45; }
+  .facts { display: flex; flex-wrap: wrap; gap: 8px 32px; margin: 0 0 16px; font-size: 14px; }
+  .facts dt { color: var(--muted); display: inline; }
+  .facts dd { display: inline; margin: 0 0 0 8px; font-weight: 600; }
+  .strategy .error { margin: 0 0 12px; font-size: 14px; }
 
-  @media (max-width: 760px) {
+  @media (max-width: 1023px) {
     .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
-  @media (max-width: 640px) {
-    :root { --bg-gradient: radial-gradient(at 30% 0%, #fff4e0 0%, transparent 60%); --blur: blur(8px) saturate(150%); }
+  @media (max-width: 767px) {
     main { padding: 40px 16px 64px; gap: 40px; }
-    h1 { font-size: 36px; }
-    .stat.hero { padding: 22px 20px 20px; }
-    .stat.hero .value { font-size: 36px; }
+    h1 { font-size: 34px; line-height: 1.12; }
+    .stat.hero { padding: 24px; }
+    .stat.hero .value { font-size: 34px; line-height: 1.12; }
+    .stat { padding: 16px 20px; }
     .stat .value { font-size: 20px; }
-    .panel { padding: 18px 16px; }
-    .scroll { margin: 0 -16px; padding: 0 16px; }
+    .card { border-radius: 20px; }
+    .panel { padding: 20px; }
+    .scroll { margin: 0 -20px; padding: 0 20px; }
     .strategy-head .meta { margin-left: 0; flex-basis: 100%; }
   }
 </style>
@@ -124,7 +112,7 @@
   </header>
 
   {% if snap.errors %}
-  <div class="glass errors" role="alert">
+  <div class="errors" role="alert">
     {% for e in snap.errors %}<p>{{ e }}</p>{% endfor %}
   </div>
   {% endif %}
@@ -133,28 +121,28 @@
   {% if a %}
   {% set day = a.equity - a.last_equity %}
   <section class="stats" aria-label="Account">
-    <div class="glass stat hero">
+    <div class="card stat hero">
       <span class="label">Equity</span>
       <span class="value">{{ a.equity | money }}</span>
       <span class="sub {{ 'up' if day > 0 else 'down' if day < 0 else '' }}">{{ day | signed_money }} today{% if a.last_equity %} ({{ '%+.2f' | format(day / a.last_equity * 100) }}%){% endif %}</span>
     </div>
-    <div class="glass stat"><span class="label">Cash</span><span class="value">{{ a.cash | money }}</span></div>
-    <div class="glass stat"><span class="label">Buying power</span><span class="value">{{ a.buying_power | money }}</span></div>
-    <div class="glass stat"><span class="label">Long exposure</span><span class="value">{{ a.long_value | money }}</span></div>
-    <div class="glass stat"><span class="label">Short exposure</span><span class="value">{{ a.short_value | money }}</span></div>
+    <div class="card stat"><span class="label">Cash</span><span class="value">{{ a.cash | money }}</span></div>
+    <div class="card stat"><span class="label">Buying power</span><span class="value">{{ a.buying_power | money }}</span></div>
+    <div class="card stat"><span class="label">Long exposure</span><span class="value">{{ a.long_value | money }}</span></div>
+    <div class="card stat"><span class="label">Short exposure</span><span class="value">{{ a.short_value | money }}</span></div>
   </section>
   {% endif %}
 
   {% if spark %}
   {% set first = snap.equity_curve[0] %}{% set last = snap.equity_curve[-1] %}
-  <section class="glass panel chart" aria-label="Equity, last 3 months">
+  <section class="card panel chart" aria-label="Equity, last 3 months">
     <h2>Equity, last three months</h2>
     <svg viewBox="0 0 640 120" preserveAspectRatio="none" role="img"
          aria-label="Equity from {{ first[1] | money }} to {{ last[1] | money }}">
       <defs>
         <linearGradient id="equity-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#e4b894" stop-opacity="0.45"/>
-          <stop offset="100%" stop-color="#e4b894" stop-opacity="0"/>
+          <stop offset="0%" stop-color="#0052ff" stop-opacity="0.14"/>
+          <stop offset="100%" stop-color="#0052ff" stop-opacity="0"/>
         </linearGradient>
       </defs>
       <polygon points="6,120 {{ spark }} 634,120"/>
@@ -168,7 +156,7 @@
     <h2>Strategies</h2>
     <div class="strategies">
     {% for s in snap.strategies %}
-      <article class="glass panel strategy">
+      <article class="card panel strategy">
         <div class="strategy-head">
           <h3>{{ s.name }}</h3>
           {% if s.last_iteration is none %}
@@ -202,7 +190,7 @@
 
   <section aria-label="Holdings">
     <h2>Holdings</h2>
-    <div class="glass panel">
+    <div class="card panel">
     {% if snap.positions %}
     <div class="scroll"><table>
       <thead><tr><th>Symbol</th><th class="num">Qty</th><th class="num">Avg cost</th><th class="num">Price</th><th class="num">Market value</th><th class="num">Unrealized P&amp;L</th></tr></thead>
@@ -225,9 +213,9 @@
     </div>
   </section>
 
-  <section aria-label="Recent orders">
+  <section class="orders" aria-label="Recent orders">
     <h2>Recent orders</h2>
-    <div class="glass panel">
+    <div class="card panel">
     {% if snap.orders %}
     <div class="scroll"><table>
       <thead><tr><th>Time</th><th>Symbol</th><th>Side</th><th class="num">Qty</th><th class="num">Fill price</th><th>Status</th></tr></thead>
